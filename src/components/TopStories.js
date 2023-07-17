@@ -1,28 +1,43 @@
-import React, { useState, useEffect } from 'react';
+// We remove the useState hook and add the useReducer hook.
+import React, { useEffect, useReducer } from 'react';
+import topStoriesReducer from './../reducers/top-stories-reducer';
+// We import our action creators.
+import { getTopStoriesFailure, getTopStoriesSuccess } from './../actions/index';
+
+// We create initial state for the useReducer hook.
+const initialState = {
+  isLoaded: false,
+  topStories: [],
+  error: null
+};
 
 function TopStories () {
-  const [error, setError] = useState(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [topStories, setTopStories] = useState([]);
+  // We initialize the useReducer hook.
+  const [state, dispatch] = useReducer(topStoriesReducer, initialState);
 
   useEffect(() => {
     fetch(`https://api.nytimes.com/svc/topstories/v2/home.json?api-key=${process.env.REACT_APP_API_KEY}`)
       .then(response => {
-          if (!response.ok) {
-            throw new Error(`${response.status}: ${response.statusText}`);
-          } else {
-            return response.json()
-          }
-        })
+        if (!response.ok) {
+          throw new Error(`${response.status}: ${response.statusText}`);
+        } else {
+          return response.json()
+        }
+      })
       .then((jsonifiedResponse) => {
-          setTopStories(jsonifiedResponse.results)
-          setIsLoaded(true)
-        })
+        // We create an action and then dispatch it.
+        const action = getTopStoriesSuccess(jsonifiedResponse.results)
+        dispatch(action);
+      })
       .catch((error) => {
-        setError(error.message)
-        setIsLoaded(true)
+        // We create an action and then dispatch it. 
+        const action = getTopStoriesFailure(error.message)
+        dispatch(action);
       });
     }, [])
+
+  // we destructure error, isLoaded, and topStories from the state variable.
+  const { error, isLoaded, topStories } = state;
 
   if (error) {
     return <h1>Error: {error}</h1>;
